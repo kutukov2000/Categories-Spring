@@ -3,12 +3,19 @@ package com.example.controllers;
 import lombok.AllArgsConstructor;
 
 import com.example.dtos.CategoryCreateDTO;
+import com.example.dtos.CategoryItemDTO;
 import com.example.entities.CategoryEntity;
+import com.example.mapper.CategoryMapper;
 import com.example.repositories.CategoryRepository;
+import com.example.storage.FileSaveFormat;
+import com.example.storage.StorageService;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -24,6 +31,8 @@ import java.util.List;
 @RequestMapping("api/categories")
 public class CategoryController {
     private final CategoryRepository categoryRepository;
+    private final CategoryMapper categoryMapper;
+    private final StorageService storageService;
 
     @GetMapping
     public ResponseEntity<List<CategoryEntity>> index() {
@@ -31,14 +40,18 @@ public class CategoryController {
         return new ResponseEntity<>(list, HttpStatus.OK);
     }
 
-    @PostMapping
-    CategoryEntity createCategory(@RequestBody CategoryCreateDTO newCategory) {
-        CategoryEntity category = new CategoryEntity();
-        category.setName(newCategory.getName());
-        category.setDescription(newCategory.getDescription());
-        category.setImage(newCategory.getImage());
-        category.setCreationTime(LocalDateTime.now());
-        return categoryRepository.save(category);
+    @PostMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    ResponseEntity<CategoryItemDTO> createCategory(@ModelAttribute CategoryCreateDTO newCategory) {
+        try {
+            CategoryEntity category = categoryMapper.categoryCreateDTO(newCategory);
+            String image = storageService.saveImage(newCategory.getImage(), FileSaveFormat.WEBP);
+            category.setImage(image);
+            category.setCreationTime(LocalDateTime.now());
+            categoryRepository.save(category);
+            return new ResponseEntity<>(categoryMapper.categoryItemDTO(category), HttpStatus.CREATED);
+        } catch (Exception ex) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
     }
 
     @PutMapping("{id}")
@@ -47,7 +60,7 @@ public class CategoryController {
                 .map(category -> {
                     category.setName(editedCategory.getName());
                     category.setDescription(editedCategory.getDescription());
-                    category.setImage(editedCategory.getImage());
+                    // category.setImage(editedCategory.getImage());
                     categoryRepository.save(category);
                     return new ResponseEntity<>(category, HttpStatus.OK);
                 })

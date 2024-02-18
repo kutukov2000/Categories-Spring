@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 import com.example.entities.CategoryEntity;
 import com.example.repositories.CategoryRepository;
 import com.example.storage.StorageProperties;
+import com.example.storage.StorageService;
 
 @SpringBootApplication
 @EnableConfigurationProperties(StorageProperties.class)
@@ -20,9 +21,9 @@ public class Main {
     }
 
     @Bean
-    CommandLineRunner runner(CategoryRepository categoryRepository) {
+    CommandLineRunner runner(CategoryRepository categoryRepository, StorageService storageService) {
         return args -> {
-
+            storageService.init();
             // CategoryEntity category = new CategoryEntity();
             // category.setName("Продукти");
             // category.setDescription("Для усіх людей");
