@@ -2,7 +2,7 @@ package com.example.controllers;
 
 import lombok.AllArgsConstructor;
 
-import com.example.entities.CategoryCreateModel;
+import com.example.dtos.CategoryCreateDTO;
 import com.example.entities.CategoryEntity;
 import com.example.repositories.CategoryRepository;
 import org.springframework.http.HttpStatus;
@@ -32,7 +32,7 @@ public class CategoryController {
     }
 
     @PostMapping
-    CategoryEntity createCategory(@RequestBody CategoryCreateModel newCategory) {
+    CategoryEntity createCategory(@RequestBody CategoryCreateDTO newCategory) {
         CategoryEntity category = new CategoryEntity();
         category.setName(newCategory.getName());
         category.setDescription(newCategory.getDescription());
@@ -42,7 +42,7 @@ public class CategoryController {
     }
 
     @PutMapping("{id}")
-    ResponseEntity<CategoryEntity> editCategory(@RequestBody CategoryCreateModel editedCategory, @PathVariable int id) {
+    ResponseEntity<CategoryEntity> editCategory(@RequestBody CategoryCreateDTO editedCategory, @PathVariable int id) {
         return categoryRepository.findById(id)
                 .map(category -> {
                     category.setName(editedCategory.getName());
