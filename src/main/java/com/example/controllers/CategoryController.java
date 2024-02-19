@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -54,19 +53,29 @@ public class CategoryController {
         }
     }
 
-    @PutMapping("{id}")
-    ResponseEntity<CategoryEntity> editCategory(@RequestBody CategoryCreateDTO editedCategory, @PathVariable int id) {
-        return categoryRepository.findById(id)
+    @PutMapping(value = "{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    ResponseEntity<CategoryEntity> editCategory(@ModelAttribute CategoryCreateDTO editedCategory, @PathVariable int id) {
+        categoryRepository.findById(id)
                 .map(category -> {
-                    category.setName(editedCategory.getName());
-                    category.setDescription(editedCategory.getDescription());
-                    // category.setImage(editedCategory.getImage());
-                    categoryRepository.save(category);
-                    return new ResponseEntity<>(category, HttpStatus.OK);
+                    try {
+                        category.setName(editedCategory.getName());
+                        category.setDescription(editedCategory.getDescription());
+
+                        String image = storageService.saveImage(editedCategory.getImage(), FileSaveFormat.WEBP);
+                        category.setImage(image);
+
+                        categoryRepository.save(category);
+                        return new ResponseEntity<>(categoryMapper.categoryItemDTO(category), HttpStatus.OK);
+                    } catch (Exception ex) {
+                        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+                    }
+
                 })
                 .orElseGet(() -> {
                     return new ResponseEntity<>(HttpStatus.NOT_FOUND);
                 });
+
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     @DeleteMapping("{id}")
