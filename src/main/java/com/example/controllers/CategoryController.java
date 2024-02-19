@@ -8,6 +8,7 @@ import com.example.entities.CategoryEntity;
 import com.example.mapper.CategoryMapper;
 import com.example.repositories.CategoryRepository;
 import com.example.storage.FileSaveFormat;
+import com.example.storage.StorageProperties;
 import com.example.storage.StorageService;
 
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -54,10 +59,13 @@ public class CategoryController {
     }
 
     @PutMapping(value = "{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    ResponseEntity<CategoryEntity> editCategory(@ModelAttribute CategoryCreateDTO editedCategory, @PathVariable int id) {
+    ResponseEntity<CategoryEntity> editCategory(@ModelAttribute CategoryCreateDTO editedCategory,
+            @PathVariable int id) {
         categoryRepository.findById(id)
                 .map(category -> {
                     try {
+                        deleteExistedImages(category.getImage());
+                        
                         category.setName(editedCategory.getName());
                         category.setDescription(editedCategory.getDescription());
 
@@ -82,12 +90,28 @@ public class CategoryController {
     public ResponseEntity<HttpStatus> deleteCategory(@PathVariable int id) {
         return categoryRepository.findById(id)
                 .map(category -> {
+                    deleteExistedImages(category.getImage());
                     categoryRepository.delete(category);
                     return new ResponseEntity<HttpStatus>(HttpStatus.OK);
                 })
                 .orElseGet(() -> {
                     return new ResponseEntity<HttpStatus>(HttpStatus.NOT_FOUND);
                 });
+    }
+
+    private void deleteExistedImages(String imageName) {
+        String folderPath = new StorageProperties().getLocation();
+
+        int[] sizes = { 32, 150, 300, 600, 1200 };
+        for (var size : sizes) {
+            String imagePath = folderPath + "/" + size + "_" + imageName;
+            Path filePath = Paths.get(imagePath);
+            try {
+                Files.delete(filePath);
+            } catch (IOException e) {
+                System.err.println("Error deleting the file: " + e.getMessage());
+            }
+        }
     }
 
 }
