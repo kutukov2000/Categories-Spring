@@ -7,5 +7,5 @@ import org.springframework.web.multipart.MultipartFile;
 public interface StorageService {
     void init() throws IOException;
 
-    String saveImage(MultipartFile file, FileSaveFormat foramt) throws IOException;
+    String saveImage(MultipartFile file, FileSaveFormat format) throws IOException;
 }
