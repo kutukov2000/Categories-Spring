@@ -44,6 +44,13 @@ public class CategoryController {
         return new ResponseEntity<>(list, HttpStatus.OK);
     }
 
+    @GetMapping("{id}")
+    public ResponseEntity<CategoryItemDTO> getById(@PathVariable int id) {
+        return categoryRepository.findById(id)
+                .map(category -> new ResponseEntity<>(categoryMapper.categoryItemDTO(category), HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
     @PostMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     ResponseEntity<CategoryItemDTO> createCategory(@ModelAttribute CategoryCreateDTO newCategory) {
         try {
@@ -65,7 +72,7 @@ public class CategoryController {
                 .map(category -> {
                     try {
                         deleteExistedImages(category.getImage());
-                        
+
                         category.setName(editedCategory.getName());
                         category.setDescription(editedCategory.getDescription());
 
