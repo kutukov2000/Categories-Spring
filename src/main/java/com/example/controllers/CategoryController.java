@@ -8,7 +8,6 @@ import com.example.entities.CategoryEntity;
 import com.example.mapper.CategoryMapper;
 import com.example.repositories.CategoryRepository;
 import com.example.storage.FileSaveFormat;
-import com.example.storage.StorageProperties;
 import com.example.storage.StorageService;
 
 import org.springframework.http.HttpStatus;
@@ -24,9 +23,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -71,7 +67,7 @@ public class CategoryController {
         categoryRepository.findById(id)
                 .map(category -> {
                     try {
-                        deleteExistedImages(category.getImage());
+                        storageService.deleteImage(category.getImage());
 
                         category.setName(editedCategory.getName());
                         category.setDescription(editedCategory.getDescription());
@@ -97,28 +93,16 @@ public class CategoryController {
     public ResponseEntity<HttpStatus> deleteCategory(@PathVariable int id) {
         return categoryRepository.findById(id)
                 .map(category -> {
-                    deleteExistedImages(category.getImage());
-                    categoryRepository.delete(category);
-                    return new ResponseEntity<HttpStatus>(HttpStatus.OK);
+                    try{
+                        storageService.deleteImage(category.getImage());
+                        categoryRepository.delete(category);
+                        return new ResponseEntity<HttpStatus>(HttpStatus.OK);
+                    }catch (IOException ex){
+                        return new ResponseEntity<HttpStatus>(HttpStatus.BAD_REQUEST);
+                    }
                 })
                 .orElseGet(() -> {
                     return new ResponseEntity<HttpStatus>(HttpStatus.NOT_FOUND);
                 });
     }
-
-    private void deleteExistedImages(String imageName) {
-        String folderPath = new StorageProperties().getLocation();
-
-        int[] sizes = { 32, 150, 300, 600, 1200 };
-        for (var size : sizes) {
-            String imagePath = folderPath + "/" + size + "_" + imageName;
-            Path filePath = Paths.get(imagePath);
-            try {
-                Files.delete(filePath);
-            } catch (IOException e) {
-                System.err.println("Error deleting the file: " + e.getMessage());
-            }
-        }
-    }
-
 }
