@@ -11,6 +11,8 @@ import com.example.repositories.CategoryRepository;
 import com.example.storage.FileSaveFormat;
 import com.example.storage.StorageService;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
@@ -103,5 +106,13 @@ public class CategoryController {
                 .orElseGet(() -> {
                     return new ResponseEntity<HttpStatus>(HttpStatus.NOT_FOUND);
                 });
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<Page<CategoryItemDTO>> searchByName(@RequestParam(required = false) String name,
+            Pageable pageable) {
+        Page<CategoryEntity> categories = categoryRepository.findByNameContainingIgnoreCase(name, pageable);
+        Page<CategoryItemDTO> result = categories.map(categoryMapper::categoryItemDTO);
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 }

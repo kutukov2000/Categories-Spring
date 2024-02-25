@@ -1,8 +1,10 @@
 package com.example.repositories;
 
+import com.example.entities.CategoryEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.example.entities.CategoryEntity;
-
-public interface CategoryRepository extends JpaRepository<CategoryEntity, Integer>{
+public interface CategoryRepository extends JpaRepository<CategoryEntity, Integer> {
+    Page<CategoryEntity> findByNameContainingIgnoreCase(String name, Pageable pageable);
 }
