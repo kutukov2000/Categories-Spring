@@ -4,6 +4,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import com.example.dtos.CategoryCreateDTO;
+import com.example.dtos.CategoryEditDTO;
 import com.example.dtos.CategoryItemDTO;
 import com.example.entities.CategoryEntity;
 
@@ -14,4 +15,7 @@ public interface CategoryMapper {
 
     @Mapping(target = "dateCreated", source = "creationTime", dateFormat = "dd.MM.yyyy HH.MM.SS")
     CategoryItemDTO categoryItemDTO(CategoryEntity category);
+
+    @Mapping(target = "image", ignore = true)
+    CategoryEntity categoryEditDto(CategoryEditDTO dto);
 }

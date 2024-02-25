@@ -3,6 +3,7 @@ package com.example.controllers;
 import lombok.AllArgsConstructor;
 
 import com.example.dtos.CategoryCreateDTO;
+import com.example.dtos.CategoryEditDTO;
 import com.example.dtos.CategoryItemDTO;
 import com.example.entities.CategoryEntity;
 import com.example.mapper.CategoryMapper;
@@ -61,43 +62,41 @@ public class CategoryController {
         }
     }
 
-    @PutMapping(value = "{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    ResponseEntity<CategoryEntity> editCategory(@ModelAttribute CategoryCreateDTO editedCategory,
-            @PathVariable int id) {
-        categoryRepository.findById(id)
-                .map(category -> {
-                    try {
-                        storageService.deleteImage(category.getImage());
+    @PutMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<CategoryItemDTO> edit(@ModelAttribute CategoryEditDTO editedCategory) {
+        var existedCategory = categoryRepository.findById(editedCategory.getId()).orElse(null);
+        if (existedCategory == null)
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
-                        category.setName(editedCategory.getName());
-                        category.setDescription(editedCategory.getDescription());
+        var entity = categoryMapper.categoryEditDto(editedCategory);
+        if (editedCategory.getFile() == null)
+            entity.setImage(existedCategory.getImage());
+        else {
+            try {
+                storageService.deleteImage(existedCategory.getImage());
+                String fileName = storageService.saveImage(editedCategory.getFile(), FileSaveFormat.WEBP);
+                entity.setImage(fileName);
+            } catch (Exception exception) {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+        }
 
-                        String image = storageService.saveImage(editedCategory.getImage(), FileSaveFormat.WEBP);
-                        category.setImage(image);
+        entity.setCreationTime(existedCategory.getCreationTime());
 
-                        categoryRepository.save(category);
-                        return new ResponseEntity<>(categoryMapper.categoryItemDTO(category), HttpStatus.OK);
-                    } catch (Exception ex) {
-                        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-                    }
-
-                })
-                .orElseGet(() -> {
-                    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-                });
-
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        categoryRepository.save(entity);
+        var result = categoryMapper.categoryItemDTO(entity);
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
     @DeleteMapping("{id}")
     public ResponseEntity<HttpStatus> deleteCategory(@PathVariable int id) {
         return categoryRepository.findById(id)
                 .map(category -> {
-                    try{
+                    try {
                         storageService.deleteImage(category.getImage());
                         categoryRepository.delete(category);
                         return new ResponseEntity<HttpStatus>(HttpStatus.OK);
-                    }catch (IOException ex){
+                    } catch (IOException ex) {
                         return new ResponseEntity<HttpStatus>(HttpStatus.BAD_REQUEST);
                     }
                 })
